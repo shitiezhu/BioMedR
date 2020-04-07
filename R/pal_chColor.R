@@ -1,5 +1,5 @@
 pal_chColor <- function(palette = palette, alpha = 1) {
-  require(scales)
+
   palette = sample(as.character(ch_color$hex), 525)
   #palette = as.character(ch_color$hex)
   #palette <- match.arg(palette)
