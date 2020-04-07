@@ -1,6 +1,6 @@
 
 
-POSTAR <- function(key = NA, method = "eclip", protocol = ''){
+POSTAR <- function(key = NA, method = "eclip", protocol = "PAR-CLIP,Piranha_0.01"){
 
   suppressWarnings(suppressPackageStartupMessages({
     library(httr)
