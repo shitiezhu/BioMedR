@@ -2,6 +2,7 @@
 
 POSTAR <- function(key = NA, method = "eclip", protocol = ''){
 
+  options(warnings=-1)
   suppressPackageStartupMessages({
     library(httr)
     library(jsonlite)
