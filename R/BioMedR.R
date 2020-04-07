@@ -1,11 +1,4 @@
 
-Col2Grey <- function(col){
-  rgb <- col2rgb(col)
-  g <- rbind( c(0.1, 0.3, 0.6) ) %*% rgb
-  rgb(g, g, g, maxColorValue=255)
-}
-
-
 add_flag <- function(pheatmap,
                      kept.labels,
                      repel.degree) {
@@ -85,4 +78,11 @@ add_flag <- function(pheatmap,
 # kept.labels should be a vector of labels you wish to show
 # repel.degree is a number in the range [0, 1], controlling how much the
 # labels are spread out from one another
+
+
+Col2Grey <- function(col){
+  rgb <- col2rgb(col)
+  g <- rbind( c(0.1, 0.3, 0.6) ) %*% rgb
+  rgb(g, g, g, maxColorValue=255)
+}
 
