@@ -1,12 +1,15 @@
-library(httr)
-library(jsonlite)
-library(curl)
-library(rlist)
-library(UpSetR)
-library(tidyverse)
-library(rjson)
+
 
 POSTAR <- function(key = NA, method = "eclip", protocol = ''){
+
+  library(httr)
+  library(jsonlite)
+  library(curl)
+  library(rlist)
+  library(UpSetR)
+  library(tidyverse)
+  library(rjson)
+
   headers <- c('Accept'='application/json, text/javascript, */*; q=0.01',
                'Content-Type'='application/x-www-form-urlencoded; charset=UTF-8',
                'User-Agent'='Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36',
