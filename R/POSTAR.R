@@ -2,13 +2,14 @@
 
 POSTAR <- function(key = NA, method = "eclip", protocol = ''){
 
-  library(httr)
-  library(jsonlite)
-  library(curl)
-  library(rlist)
-  library(UpSetR)
-  library(tidyverse)
-  library(rjson)
+  suppressPackageStartupMessages({
+    library(httr)
+    library(jsonlite)
+    library(curl)
+    library(rlist)
+    library(UpSetR)
+    library(tidyverse)
+    library(rjson)} )
 
   headers <- c('Accept'='application/json, text/javascript, */*; q=0.01',
                'Content-Type'='application/x-www-form-urlencoded; charset=UTF-8',
