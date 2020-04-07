@@ -5,3 +5,4 @@ Col2Grey <- function(col){
   rgb(g, g, g, maxColorValue=255)
 }
 
+BioMedR::Col2Grey("red")
