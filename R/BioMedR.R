@@ -4,5 +4,3 @@ Col2Grey <- function(col){
   g <- rbind( c(0.1, 0.3, 0.6) ) %*% rgb
   rgb(g, g, g, maxColorValue=255)
 }
-
-BioMedR::Col2Grey("red")
