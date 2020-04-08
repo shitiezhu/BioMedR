@@ -47,8 +47,8 @@ add_flag <- function(pheatmap,
 
   new.y.positions <- repelled.y(new.label$y,
                                 d.select = new.label$label != "")
-  new.flag <- segmentsGrob(x0 = new.label$x- unit(0.025, "npc"),
-                           x1 = new.label$x + unit(0.15, "npc"),
+  new.flag <- segmentsGrob(x0 = new.label$x,
+                           x1 = new.label$x + unit(0.1, "npc"),
                            y0 = new.label$y[new.label$label != ""],
                            y1 = new.y.positions)
 
