@@ -7,6 +7,7 @@ add_flag <- function(pheatmap,
   #                space to allocate for repelling labels.
   ## repel.degree = 0: spread out labels over existing range of kept labels
   ## repel.degree = 1: spread out labels over the full y-axis
+  require(grid)
 
   heatmap <- pheatmap$gtable
 
