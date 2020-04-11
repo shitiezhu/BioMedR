@@ -4,6 +4,6 @@ KEGGpathwayGeneList <- function(dbentries = NULL){
     split(.,rep(1:2, length(.)/2)) %>%
     cbind.data.frame() %>%
     setNames(c("ENTREZID","Gene")) %>%
-    dplyr::separate(Gene, c("SYMBOL", "Names"), sep = ";")
+    tidyr::separate(Gene, c("SYMBOL", "Names"), sep = ";")
   genenames
 }
