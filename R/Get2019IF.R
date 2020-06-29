@@ -1,3 +1,4 @@
+
 Get2019IF <- function(){
   library(httr)
   library(magrittr)
