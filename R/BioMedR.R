@@ -85,3 +85,122 @@ Col2Grey <- function(col){
   rgb(g, g, g, maxColorValue=255)
 }
 
+library(tidyverse)
+library(survival)
+library(survminer)
+library(patchwork)
+
+fpkmToTpm <- function(fpkm)
+{
+  exp(log(fpkm) - log(sum(fpkm)) + log(1e6))
+}
+
+TCGA_KIRC <- data.table::fread("GDC_TCGA_KIRC_YAPgenes.tsv") %>% as.data.frame() #%>%
+# mutate_at(7:ncol(.), ~ 2^.x -1) %>%
+# na.omit() %>%
+# mutate_at(7:ncol(.), fpkmToTpm) %>%
+# mutate_at(7:ncol(.), ~log2(.x +1))
+
+SYMBOL = clusterProfiler::bitr(str_sub(colnames(TCGA_KIRC[,7:22]), 1,15), "ENSEMBL", "SYMBOL", OrgDb = "org.Hs.eg.db")
+
+names(TCGA_KIRC)[7:22] <- SYMBOL$SYMBOL
+
+TCGA_KIRC <- TCGA_KIRC %>% dplyr::select(-GPX6)
+
+
+OSS <- function(data, gene){
+
+  library(tidyverse)
+  library(survival)
+  library(survminer)
+  library(patchwork)
+
+  survdata <- data %>%
+    filter( sample_type.samples == "Primary Tumor", tumor_stage.diagnoses != "not reported") %>%
+    na.omit() %>%
+    mutate(group = ifelse(.[[gene]] > quantile(.[[gene]], 0.5), "high",
+                          ifelse(.[[gene]] < quantile(.[[gene]], 0.5),"low", NA)))
+  group = survdata$group
+  surv <- survdata %>% ggsurvplot(surv_fit(survival::Surv(OS.time/30, OS) ~ group, data = .), data = ., pval = T,
+                                  pval.coord = c(0.25, 0.25), size = 0.5, censor.size= 3) %>%
+    {.$plot +
+        labs(x = "Time (months)")+
+        ggprism::theme_prism(base_line_size = 0.5, base_fontface = "plain", base_size = 12)+
+        scale_color_manual(labels = c(paste0("high ", "(n = ", length(which(group == "high")), ")"),
+                                      paste0("low  ", "(n = ", length(which(group == "low")), ")")),
+                           values = c("#C00750", "#372F82"))+
+        labs(title = paste0(gene, " survival plot"))+
+        theme(legend.position = c(0.75, 0.90), plot.title = element_text(size = 12))
+    }
+
+  N_T <- data %>%
+    mutate(type = ifelse(sample_type.samples == "Solid Tissue Normal", "normal", "tumor")) %>%
+    na.omit() %>%
+    pivot_longer(gene, names_to = "genename", values_to = "expression") %>%
+    ggplot(aes(x = genename, y = expression, fill = type))+
+    geom_boxplot()+
+    ggpubr::stat_compare_means(aes(x = genename, y = expression, group = type,
+    ), method = "t.test")+
+    ggprism::theme_prism(base_line_size = 0.5, base_fontface = "plain", base_size = 12)+
+    labs(x = "", y = "mRNA expression (log2FPKM)")+
+    scale_fill_manual(values = c("#372F82", "#C00750"))+
+    theme(legend.position = "right")
+
+  stage <- data %>%
+    filter(sample_type.samples != "Solid Tissue Normal",
+           tumor_stage.diagnoses != "not reported",
+           tumor_stage.diagnoses != "stage x") %>%
+    mutate(Stage = str_replace_all(tumor_stage.diagnoses, c("ia" = "i", "ib" = "i", "ic" = "i"))) %>%
+    pivot_longer(gene, names_to = "genename", values_to = "expression") %>%
+    na.omit() %>%
+    ggplot(aes(x = genename,
+               y = expression, fill = Stage))+
+    geom_boxplot(outlier.size = 1)+
+    #ggpubr::stat_compare_means(aes(group = Stage),method = "kruskal.test", label.y = 26)+
+    #
+    labs(x = "", y = "mRNA expression (log2FPKM)")+
+    ggprism::theme_prism(base_line_size = 0.5, base_fontface = "plain", base_size = 12)+
+    theme(legend.position = "right")
+
+  ######################################################
+
+  surv_stage <- data %>%
+    filter(sample_type.samples == "Primary Tumor", tumor_stage.diagnoses != "not reported") %>%
+    na.omit() %>%
+    group_by(tumor_stage.diagnoses) %>%
+    nest() %>%
+    arrange(tumor_stage.diagnoses) %>%
+    mutate(sp = map(data, function(df) {
+      categro <- surv_cutpoint(time = "OS.time", event = "OS",variables = gene, data = df) %>%
+        surv_categorize(labels = c("low", "high"))
+      group = categro[,gene]
+      surv_plot <- ggsurvplot(surv_fit(survival::Surv(OS.time/30, OS) ~ group, data = categro),
+                              data = categro, pval = T, pval.coord = c(0.25, 0.25),
+                              size = 0.5, censor.size= 3) %>%
+        {.$plot +
+            labs(x = "Time (months)")+
+            ggprism::theme_prism(base_line_size = 0.5, base_fontface = "plain", base_size = 12)+
+            scale_color_manual(labels = c(paste0("high ", "(n = ", length(which(group == "high")), ")"),
+                                          paste0("low  ", "(n = ", length(which(group == "low")), ")")),
+                               values = c("#C00750", "#372F82"))+
+            theme(legend.position = "bottom", plot.title = element_text(size = 12))}
+    }
+    )) %>%
+    pull(sp) %>%
+    wrap_plots(nrow = 1)
+
+  ##############################################
+
+  p <- (surv + N_T + stage)/ surv_stage
+
+  if(!dir.exists("batchplots")) {dir.create("batchplots")}
+
+  ggsave(paste0(gene," plot.jpg"), p, path = "batchplots",dpi = 600, width = 14, height = 8)
+
+  # export::graph2ppt(p, paste0("batchplots/",gene," plot in TCGA_KIRC.pptx"), width = 14, height = 8)
+
+}
+
+
+
+
