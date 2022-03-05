@@ -27,91 +27,7 @@
 #' Input: signature matrix and mixture file, formatted as specified at http://cibersort.stanford.edu/tutorial.php
 #' Output: matrix object containing all results and tabular data written to disk 'CIBERSORT-Results.txt'
 #' License: http://cibersort.stanford.edu/CIBERSORT_License.txt
-#' Core algorithm
-#' @param X cell-specific gene expression
-#' @param y mixed expression per sample
-#' @export
-CoreAlg <- function(X, y){
 
-  #try different values of nu
-  svn_itor <- 3
-
-  res <- function(i){
-    if(i==1){nus <- 0.25}
-    if(i==2){nus <- 0.5}
-    if(i==3){nus <- 0.75}
-    model<-e1071::svm(X,y,type="nu-regression",kernel="linear",nu=nus,scale=F)
-    model
-  }
-
-  if(Sys.info()['sysname'] == 'Windows') out <- parallel::mclapply(1:svn_itor, res, mc.cores=1) else
-    out <- parallel::mclapply(1:svn_itor, res, mc.cores=svn_itor)
-
-  nusvm <- rep(0,svn_itor)
-  corrv <- rep(0,svn_itor)
-
-  #do cibersort
-  t <- 1
-  while(t <= svn_itor) {
-    weights = t(out[[t]]$coefs) %*% out[[t]]$SV
-    weights[which(weights<0)]<-0
-    w<-weights/sum(weights)
-    u <- sweep(X,MARGIN=2,w,'*')
-    k <- apply(u, 1, sum)
-    nusvm[t] <- sqrt((mean((k - y)^2)))
-    corrv[t] <- cor(k, y)
-    t <- t + 1
-  }
-
-  #pick best model
-  rmses <- nusvm
-  mn <- which.min(rmses)
-  model <- out[[mn]]
-
-  #get and normalize coefficients
-  q <- t(model$coefs) %*% model$SV
-  q[which(q<0)]<-0
-  w <- (q/sum(q))
-
-  mix_rmse <- rmses[mn]
-  mix_r <- corrv[mn]
-
-  newList <- list("w" = w, "mix_rmse" = mix_rmse, "mix_r" = mix_r)
-
-}
-
-#' do permutations
-#' @param perm Number of permutations
-#' @param X cell-specific gene expression
-#' @param y mixed expression per sample
-#' @export
-doPerm <- function(perm, X, Y){
-  itor <- 1
-  Ylist <- as.list(data.matrix(Y))
-  dist <- matrix()
-
-  while(itor <= perm){
-    #print(itor)
-
-    #random mixture
-    yr <- as.numeric(Ylist[sample(length(Ylist),dim(X)[1])])
-
-    #standardize mixture
-    yr <- (yr - mean(yr)) / sd(yr)
-
-    #run CIBERSORT core algorithm
-    result <- CoreAlg(X, yr)
-
-    mix_r <- result$mix_r
-
-    #store correlation
-    if(itor == 1) {dist <- mix_r}
-    else {dist <- rbind(dist, mix_r)}
-
-    itor <- itor + 1
-  }
-  newList <- list("dist" = dist)
-}
 
 #' Main functions
 #' @param sig_matrix file path to gene expression from isolated cells
@@ -120,6 +36,93 @@ doPerm <- function(perm, X, Y){
 #' @param QN Perform quantile normalization or not (TRUE/FALSE)
 #' @export
 CIBERSORT <- function(sig_matrix, mixture_file, perm=0, QN=TRUE){
+
+  #' Core algorithm
+  #' @param X cell-specific gene expression
+  #' @param y mixed expression per sample
+  #' @export
+  CoreAlg <- function(X, y){
+
+    #try different values of nu
+    svn_itor <- 3
+
+    res <- function(i){
+      if(i==1){nus <- 0.25}
+      if(i==2){nus <- 0.5}
+      if(i==3){nus <- 0.75}
+      model<-e1071::svm(X,y,type="nu-regression",kernel="linear",nu=nus,scale=F)
+      model
+    }
+
+    if(Sys.info()['sysname'] == 'Windows') out <- parallel::mclapply(1:svn_itor, res, mc.cores=1) else
+      out <- parallel::mclapply(1:svn_itor, res, mc.cores=svn_itor)
+
+    nusvm <- rep(0,svn_itor)
+    corrv <- rep(0,svn_itor)
+
+    #do cibersort
+    t <- 1
+    while(t <= svn_itor) {
+      weights = t(out[[t]]$coefs) %*% out[[t]]$SV
+      weights[which(weights<0)]<-0
+      w<-weights/sum(weights)
+      u <- sweep(X,MARGIN=2,w,'*')
+      k <- apply(u, 1, sum)
+      nusvm[t] <- sqrt((mean((k - y)^2)))
+      corrv[t] <- cor(k, y)
+      t <- t + 1
+    }
+
+    #pick best model
+    rmses <- nusvm
+    mn <- which.min(rmses)
+    model <- out[[mn]]
+
+    #get and normalize coefficients
+    q <- t(model$coefs) %*% model$SV
+    q[which(q<0)]<-0
+    w <- (q/sum(q))
+
+    mix_rmse <- rmses[mn]
+    mix_r <- corrv[mn]
+
+    newList <- list("w" = w, "mix_rmse" = mix_rmse, "mix_r" = mix_r)
+
+  }
+
+  #' do permutations
+  #' @param perm Number of permutations
+  #' @param X cell-specific gene expression
+  #' @param y mixed expression per sample
+  #' @export
+  doPerm <- function(perm, X, Y){
+    itor <- 1
+    Ylist <- as.list(data.matrix(Y))
+    dist <- matrix()
+
+    while(itor <= perm){
+      #print(itor)
+
+      #random mixture
+      yr <- as.numeric(Ylist[sample(length(Ylist),dim(X)[1])])
+
+      #standardize mixture
+      yr <- (yr - mean(yr)) / sd(yr)
+
+      #run CIBERSORT core algorithm
+      result <- CoreAlg(X, yr)
+
+      mix_r <- result$mix_r
+
+      #store correlation
+      if(itor == 1) {dist <- mix_r}
+      else {dist <- rbind(dist, mix_r)}
+
+      itor <- itor + 1
+    }
+    newList <- list("dist" = dist)
+  }
+
 
   #read in data
   X <- read.table(sig_matrix,header=T,sep="\t",row.names=1,check.names=F)
