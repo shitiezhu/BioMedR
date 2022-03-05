@@ -125,8 +125,8 @@ CIBERSORT <- function(sig_matrix, mixture_file, perm=0, QN=TRUE){
 
 
   #read in data
-  X <- read.table(sig_matrix,header=T,sep="\t",row.names=1,check.names=F)
-  Y <- read.table(mixture_file, header=T, sep="\t", row.names=1,check.names=F)
+  X <- sig_matrix
+  Y <- mixture_file
 
   X <- data.matrix(X)
   Y <- data.matrix(Y)
