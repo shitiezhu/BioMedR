@@ -96,7 +96,27 @@ fpkmToTpm <- function(fpkm)
 }
 
 
+corrplot <- function(data, x, y, path, out.format){
+  path = path
+  if(!dir.exists(path)) {dir.create(path)}
 
+  p = data %>%
+    as.data.frame() %>%
+    ggplot(aes_string(x, y)) +
+    geom_point(size = 0.5)+
+    geom_smooth(method = "lm")+
+    ggpubr::stat_cor(size = 2.8)+
+    ggprism::theme_prism(base_line_size = 0.5, base_fontface = "plain", base_size = 8)
+
+  if(out.format == "jpg") {ggsave(paste0(x,"_",y,"-corrplot.jpg"),p, path = path, dpi = 600, width = 4, height = 4)
+  } else if (out.format == "pptx") {
+    export::graph2ppt(p, paste0(path,"/" ,x,"_",y,"-corrplot.pptx"), width = 2, height = 2)
+  }else if (out.format == "pdf") {
+    ggsave(paste0(x,"_",y,"-corrplot.pdf"),p, path = path, width = 2, height = 2)
+  }else if (out.format == "r") {
+    p
+  }
+}
 
 
 
