@@ -102,7 +102,7 @@ CIBERSORT <- function(sig_matrix, mixture_file, perm=0, QN=TRUE){
     itor <- 1
     Ylist <- as.list(data.matrix(Y))
     dist <- matrix()
-    pb <- txtProgressBar(style=3)
+
 
     while(itor <= perm){
       #print(itor)
@@ -122,7 +122,7 @@ CIBERSORT <- function(sig_matrix, mixture_file, perm=0, QN=TRUE){
       if(itor == 1) {dist <- mix_r}
       else {dist <- rbind(dist, mix_r)}
 
-      setTxtProgressBar(pb, itor/perm)
+
 
       itor <- itor + 1
 
@@ -170,7 +170,8 @@ CIBERSORT <- function(sig_matrix, mixture_file, perm=0, QN=TRUE){
   X <- (X - mean(X)) / sd(as.vector(X))
 
   #empirical null distribution of correlation coefficients
-  if(P > 0) {nulldist <- sort(doPerm(P, X, Y)$dist)}
+  if(P > 0) {nulldist <- sort(doPerm(P, X, Y)$dist)
+
 
   #print(nulldist)
 
@@ -181,7 +182,7 @@ CIBERSORT <- function(sig_matrix, mixture_file, perm=0, QN=TRUE){
   itor <- 1
   mixtures <- dim(Y)[2]
   pval <- 9999
-
+  pb <- txtProgressBar(style=3)
   #iterate through mixtures
   while(itor <= mixtures){
 
@@ -207,7 +208,7 @@ CIBERSORT <- function(sig_matrix, mixture_file, perm=0, QN=TRUE){
     else {output <- rbind(output, out)}
 
     itor <- itor + 1
-
+    setTxtProgressBar(pb, itor/perm)}
   }
 
   #save results
