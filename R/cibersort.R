@@ -186,6 +186,8 @@ CIBERSORT <- function(sig_matrix, mixture_file, perm=0, QN=TRUE){
   #iterate through mixtures
   while(itor <= mixtures){
 
+    setTxtProgressBar(pb, itor/ncol(Y))
+
     y <- Y[,itor]
 
     #standardize mixture
@@ -208,7 +210,7 @@ CIBERSORT <- function(sig_matrix, mixture_file, perm=0, QN=TRUE){
     else {output <- rbind(output, out)}
 
     itor <- itor + 1
-    setTxtProgressBar(pb, itor/perm)}
+   }
   }
 
   #save results
