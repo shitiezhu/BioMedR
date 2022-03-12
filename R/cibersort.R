@@ -35,6 +35,9 @@
 #' @param perm Number of permutations
 #' @param QN Perform quantile normalization or not (TRUE/FALSE)
 #' @export
+#'
+
+
 CIBERSORT <- function(sig_matrix, mixture_file, perm=0, QN=TRUE){
 
   #' Core algorithm
@@ -99,6 +102,7 @@ CIBERSORT <- function(sig_matrix, mixture_file, perm=0, QN=TRUE){
     itor <- 1
     Ylist <- as.list(data.matrix(Y))
     dist <- matrix()
+    pb <- txtProgressBar(style=3)
 
     while(itor <= perm){
       #print(itor)
@@ -121,10 +125,13 @@ CIBERSORT <- function(sig_matrix, mixture_file, perm=0, QN=TRUE){
       itor <- itor + 1
     }
     newList <- list("dist" = dist)
+
+    setTxtProgressBar(pb, itor/perm)
+    close(pb)
   }
 
 
-  #read in data
+  #CIBERSORT   read in data
   X <- sig_matrix
   Y <- mixture_file
 
@@ -212,4 +219,5 @@ CIBERSORT <- function(sig_matrix, mixture_file, perm=0, QN=TRUE){
   rownames(obj) <- colnames(Y)
   colnames(obj) <- c(colnames(X),"P-value","Correlation","RMSE")
   obj
+
 }
