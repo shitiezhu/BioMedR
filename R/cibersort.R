@@ -122,8 +122,6 @@ CIBERSORT <- function(sig_matrix, mixture_file, perm=0, QN=TRUE){
       if(itor == 1) {dist <- mix_r}
       else {dist <- rbind(dist, mix_r)}
 
-
-
       itor <- itor + 1
 
     }
@@ -187,6 +185,8 @@ CIBERSORT <- function(sig_matrix, mixture_file, perm=0, QN=TRUE){
   while(itor <= mixtures){
 
     setTxtProgressBar(pb, itor/ncol(Y))
+
+    print(paste("Progress: sample",itor, "of", ncol(Y)))
 
     y <- Y[,itor]
 
