@@ -123,7 +123,6 @@ CIBERSORT <- function(sig_matrix, mixture_file, perm=0, QN=TRUE){
       else {dist <- rbind(dist, mix_r)}
 
       setTxtProgressBar(pb, itor/perm)
-      close(pb)
 
       itor <- itor + 1
 
