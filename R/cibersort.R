@@ -186,8 +186,6 @@ CIBERSORT <- function(sig_matrix, mixture_file, perm=0, QN=TRUE){
 
     setTxtProgressBar(pb, itor/ncol(Y))
 
-    print(paste("Progress: sample",itor, "of", ncol(Y)))
-
     y <- Y[,itor]
 
     #standardize mixture
