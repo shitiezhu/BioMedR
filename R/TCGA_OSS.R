@@ -189,11 +189,11 @@ OSS <- function(data = data, gene = gene, cut.point = "0.5", out.format = "r"){
 
   if(!dir.exists("batchplots")) {dir.create("batchplots")}
 
-  if(out.format == "jpg") {ggsave(paste0(gene," plot in TCGA_KIRC.jpg"), p, path = "batchplots",dpi = 600, width = 14, height = 16)
+  if(out.format == "jpg") {ggsave(paste0(gene," plot in TCGA.jpg"), p, path = "batchplots",dpi = 600, width = 14, height = 16)
   } else if (out.format == "pptx") {
-    export::graph2ppt(p, paste0("batchplots/",gene," plot in TCGA_KIRC.pptx"), width = 14, height = 16)
+    export::graph2ppt(p, paste0("batchplots/",gene," plot in TCGA.pptx"), width = 14, height = 16)
   }else if (out.format == "pdf") {
-    ggsave(paste0(gene," plot in TCGA_KIRC.pdf"), p, path = "batchplots",dpi = 600, width = 14, height = 16)
+    ggsave(paste0(gene," plot in TCGA.pdf"), p, path = "batchplots",dpi = 600, width = 14, height = 16)
   }else if (out.format == "r") {
     p
   }
