@@ -199,3 +199,12 @@ OSS <- function(data = data, gene = gene, cut.point = "0.5", out.format = "r"){
   }
 
 }
+
+
+
+
+
+
+
+
+
