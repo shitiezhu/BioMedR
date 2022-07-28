@@ -1,4 +1,4 @@
-install.packages("foo", dependencies = ...)
+
 
 add_flag <- function(pheatmap,
                      kept.labels,
