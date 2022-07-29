@@ -1,4 +1,4 @@
-qPCR <- function(data = data, Samples = Samples, facet = TRUE){
+qPCR <- function(data = data, Samples = Samples, facet = TRUE, filename = filename){
 
   suppressMessages(library(tidyverse), library(ggpubr))
   data_a <- data %>%
@@ -25,7 +25,12 @@ qPCR <- function(data = data, Samples = Samples, facet = TRUE){
 
 
   if(!dir.exists("results")) {dir.create("results")}
-  write.csv(data_a, "results/qPCR data ready for analysis.csv", row.names = FALSE)
+  write.csv(data_a, file.path("results",  paste0(filename,"-qPCR data.csv")), row.names = FALSE)
 
-  ggsave("results/barplot.jpg", p, width = 8,height = 6)
+  ggsave(paste0(filename,"-barplot.jpg"), path = "results", p, width = 8,height = 6)
 }
+
+# Sys.time() %>%  stringr::str_extract_all('[0-9]+') %>% .[[1]] %>% paste(collapse = "")
+
+
+
