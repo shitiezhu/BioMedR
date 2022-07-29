@@ -5,7 +5,7 @@ qPCR <- function(data = data, Samples = Samples){
     full_join({group_by(.,Sample.Name) %>%
         summarise_at("Ctrl.CT", ~ mean(.x, na.rm = T))}, by = "Sample.Name", suffix=c("",".mean")) %>%
     mutate(d_CT = CT - Ctrl.CT.mean) %>%
-    full_join({filter(.,Sample.Name == "shNT") %>% group_by(Target.Name) %>%
+    full_join({filter(.,Sample.Name == Ctrl) %>% group_by(Target.Name) %>%
         summarise_at("d_CT", ~ mean(.x, na.rm = T))}, by = "Target.Name", suffix=c("",".mean")) %>%
     mutate(dd_CT = d_CT - d_CT.mean) %>%
     mutate(`2^-dd_CT` = 2^-(dd_CT)) %>%
@@ -24,5 +24,5 @@ qPCR <- function(data = data, Samples = Samples){
   if(!dir.exists("results")) {dir.create("results")}
   write.csv(data_a, "results/qPCR data ready for analysis.csv", row.names = FALSE)
 
-  ggsave("results/barplot.tiff",width = 8,height = 6)
+  ggsave("results/barplot.jpg",width = 8,height = 6)
 }
