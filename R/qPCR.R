@@ -1,4 +1,4 @@
-qPCR <- function(data = data, Samples = Samples){
+qPCR <- function(data = data, Samples = Samples, facet = TRUE){
 
   suppressMessages(library(tidyverse), library(ggpubr))
   data_a <- data %>%
@@ -14,15 +14,18 @@ qPCR <- function(data = data, Samples = Samples){
 
 
   # install.packages("ggpubr")
-  ggbarplot(data_a, x = "Target.Name", y = "2^-dd_CT", add = "mean_se",
+  p <- ggbarplot(data_a, x = "Target.Name", y = "2^-dd_CT", add = "mean_se",
             color = "Sample.Name", palette = "jco", fill = "Sample.Name",
             position = position_dodge(0.8))+
     stat_compare_means(aes(group = Sample.Name), label = "p.format") +
-    labs(y = "Rel. mRNA expression", x = "")+
-    facet_wrap(~Target.Name, scales = "free")
+    labs(y = "Rel. mRNA expression", x = "")
+  if (facet == TRUE){
+   p <- p + facet_wrap(~Target.Name, scales = "free")
+  }
+
 
   if(!dir.exists("results")) {dir.create("results")}
   write.csv(data_a, "results/qPCR data ready for analysis.csv", row.names = FALSE)
 
-  ggsave("results/barplot.jpg",width = 8,height = 6)
+  ggsave("results/barplot.jpg", p, width = 8,height = 6)
 }
