@@ -1,24 +1,72 @@
+# countdf <- as.data.frame(openxlsx::read.xlsx("readcount_shPOFUT2.xlsx", rowNames = F))
+#
+#
+# group <- as.factor(
+#   rep(c("shNT","shPOFUT2"), each = 3)
+# )
+#
+# vs = "shPOFUT2 - shNT"
 
-# countdata <- as.matrix(openxlsx::read.xlsx("gene_count_matrix - HCT116 Oxa vs Mock.xlsx", rowNames = TRUE))
-# group <- as.factor(c("OX", "OX", "NC", "NC"))
-#
-# design <- model.matrix(~0+group)
-# colnames(design) <- gsub("group", "", colnames(design))
-# design
-#
-# contr.matrix <- makeContrasts(
-#   OXvsNC = OX - NC,
-#   levels = colnames(design))
-#
-# if(!dir.exists("results")) {dir.create("results")}
-#
-# TZ_DEG(countdata = countdata, group = group,
+
+# BiocManager::install("limma")
+# BiocManager::install("Glimma")
+# BiocManager::install("Homo.sapiens")
+# BiocManager::install("clusterProfiler")
+
+
+
+
+# TZ_DEG(countdata = countdf, group = group, species = "human",
 #        contr.matrix = contr.matrix, design = design,
-#        cut.fc = 2, cut.pval = 0.05, bartopn = 10, enrich = FALSE)
+#        cut.fc = 1.5, cut.pval = 0.05, bartopn = 10, enrich = TRUE,
+#        egocut = 0.05, kkcut = 1)
 
-TZ_DEG <- function(countdata = countdata, group = group,
-                   contr.matrix = contr.matrix, design = design,
-                   cut.fc = 2, cut.pval = 0.05,bartopn = 10, enrich = FALSE) {
+
+TZ_DEG <- function(countdata = countdf, group = group, species = "human",
+                   contr.matrix = contr.matrix, design = design, gene.ID = "SYMBOL",
+                   cut.fc = 2, cut.pval = 0.05,bartopn = 10, enrich = TRUE,
+                   egocut = egocut, kkcut = kkcut) {
+
+
+  library(tidyverse)
+
+
+  if(gene.ID == "SYMBOL"){
+    if(species == "human"){
+      library(org.Hs.eg.db)
+      geneIDs <- AnnotationDbi::select(org.Hs.eg.db, keys=countdf$geneID, columns=c("SYMBOL", "ENSEMBL"),
+                                       keytype= "SYMBOL") %>% filter(!duplicated(SYMBOL))
+    } else if(species == "mouse"){
+      library(org.Mm.eg.db)
+      geneIDs <- AnnotationDbi::select(org.Mm.eg.db, keys=countdf$geneID, columns=c("SYMBOL", "ENSEMBL"),
+                                       keytype= "SYMBOL") %>% filter(!duplicated(SYMBOL))
+    }
+
+    countdata <- geneIDs %>% inner_join(countdf, by  = c("SYMBOL" = "geneID"), keep.all = T) %>%
+      na.omit() %>%
+      filter(!is.na(ENSEMBL)) %>%
+      dplyr::select(-SYMBOL) %>%
+      group_by(ENSEMBL) %>%
+      summarise_if(is.numeric, ~sum(.x)) %>%
+      ungroup() %>%
+      column_to_rownames('ENSEMBL') %>%
+      as.matrix()
+  } else if (gene.ID == "ENSEMBL"){
+    countdata = as.matrix(data.frame(countdf, row.names = 1))
+  }
+
+
+
+
+  design <- model.matrix(~0+group)
+  colnames(design) <- gsub("group", "", colnames(design))
+  design
+
+  contr.matrix <- makeContrasts(
+    tr_ct = vs,
+    levels = colnames(design))
+
+  if(!dir.exists("results")) {dir.create("results")}
 
   library(limma)
   library(Glimma)
@@ -33,9 +81,9 @@ TZ_DEG <- function(countdata = countdata, group = group,
   DGEdata$samples$group <- group
 
 
-  lcpm <- cpm(DGEdata, log=TRUE)
-
-  table(rowSums(DGEdata$counts==0)==4)
+  # lcpm <- cpm(DGEdata, log=TRUE)
+  #
+  # table(rowSums(DGEdata$counts==0)==4)
 
 
   keep.exprs <- filterByExpr(DGEdata, group=group)
@@ -48,6 +96,36 @@ TZ_DEG <- function(countdata = countdata, group = group,
 
 
   lcpm_keep <- cpm(DGEdata_keep, log=TRUE)
+  geneid <- rownames(DGEdata_keep) %>% gsub( "\\.\\d*", "",.)
+
+  library(tidyverse)
+  if(species == "human"){
+    library(org.Hs.eg.db)
+    geneid <- rownames(lcpm_keep)
+    genes <- AnnotationDbi::select(org.Hs.eg.db, keys=geneid, columns=c("SYMBOL"),
+                                   keytype= "ENSEMBL") %>%
+      na.omit() %>%
+      filter(!duplicated(SYMBOL))
+  }else if(species == "mouse"){
+    library(org.Mm.eg.db)
+    genes <- AnnotationDbi::select(org.Mm.eg.db, keys=geneid, columns=c("SYMBOL"),
+                                   keytype="ENSEMBL") %>%
+      na.omit() %>%
+      filter(!duplicated(SYMBOL))
+  }
+
+
+  n = ncol(lcpm_keep) + 2
+
+  counts_for_GSEA <- lcpm_keep %>% as.data.frame() %>%
+    rownames_to_column("ENSEMBL") %>%
+    inner_join(genes, by = "ENSEMBL") %>%
+    dplyr::select(-ENSEMBL) %>%
+    dplyr::rename(sample = SYMBOL ) %>%
+    mutate(DESCRIPTION = rep("na", nrow(.))) %>%
+    .[,c(n-1,n-0,1:(n-2))]
+
+  write.table(counts_for_GSEA, "results/count matrix_GSEA.txt",sep = "\t", row.names = F)
 
   col.group <- group
   levels(col.group) <-RColorBrewer::brewer.pal(nlevels(col.group), "Set1")
@@ -70,23 +148,7 @@ TZ_DEG <- function(countdata = countdata, group = group,
 
   summary(decideTests(efit))
 
-  library(tidyverse)
 
-  geneid <- rownames(DGEdata_keep)
-  genes <- AnnotationDbi::select(Homo.sapiens, keys=geneid, columns=c("SYMBOL"),
-                                 keytype="ENSEMBL") %>% na.omit() %>%
-    filter(!duplicated(SYMBOL))
-
-  counts_for_GSEA <- DGEdata_keep$counts %>% as.data.frame() %>%
-    rownames_to_column("ENSEMBL") %>%
-    inner_join(genes, by = "ENSEMBL") %>%
-    select(-1) %>%
-    rename (sample=SYMBOL ) %>%
-    mutate(DESCRIPTION = rep("na", nrow(.))) %>%
-    .[,c(5,6,1:4)]
-
-  if(!dir.exists("results")) {dir.create("results")}
-  write.table(counts_for_GSEA, "results/count matrix.txt",sep = "\t", row.names = F)
 
   cut.fc = cut.fc
   cut.pval = cut.pval
@@ -163,34 +225,46 @@ TZ_DEG <- function(countdata = countdata, group = group,
     genelist_up <- filter(DEGresults, regulation == "Up_reg")$logFC
     names(genelist_up) <- filter(DEGresults, regulation == "Up_reg")$SYMBOL
 
-    GeneList_up <- bitr(names(genelist_up), fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Hs.eg.db")
+    if(species == "human"){
+      OrgDb = "org.Hs.eg.db"
+      organism = "hsa"
+    } else if(species == "mouse"){
+      OrgDb= "org.Mm.eg.db"
+      organism = "mmu"
+    }
+
+    GeneList_up <- bitr(names(genelist_up), fromType="SYMBOL", toType="ENTREZID", OrgDb= OrgDb)
     head(GeneList_up)
 
     gene_up <- GeneList_up$ENTREZID
 
     ego_all_up <- enrichGO(gene = gene_up,
-                           OrgDb = "org.Hs.eg.db",
+                           OrgDb = OrgDb,
                            ont = "ALL",
                            pAdjustMethod = "BH",
-                           pvalueCutoff = 0.05,
-                           qvalueCutoff = 0.5,
+                           pvalueCutoff = egocut,
+                           qvalueCutoff = 1,
                            readable = TRUE)
 
     ego_bar_up <- barplot(ego_all_up,showCategory=20, split= "ONTOLOGY")+
-      facet_grid(ONTOLOGY~.,scale="free")
+      facet_grid(ONTOLOGY~.,scale="free")+
+      scale_y_discrete(labels=function(x) str_wrap(x, width=60))
     # scale_x_discrete(labels=function(x) str_wrap(x, width=50))+
     # theme_bw()
-    ggsave("results/ego_bar_up.pdf", ego_bar_up, height = 10, width = 10)
+    ggsave("results/ego_bar_up.pdf", ego_bar_up, height = 15, width = 10)
 
     GO_all_up <- as.data.frame(ego_all_up)
 
     write.csv(GO_all_up, file = "results/GO_all_up.csv")
 
 
+
+
     kk_up <- enrichKEGG(gene = gene_up,
-                        organism = 'hsa',
-                        pvalueCutoff = 0.05)
-    kk_up <- setReadable(kk_up, keyType = "ENTREZID", OrgDb = "org.Hs.eg.db")
+                        organism = organism,
+                        pvalueCutoff = kkcut,
+                        qvalueCutoff = 1)
+    kk_up <- setReadable(kk_up, keyType = "ENTREZID", OrgDb = OrgDb)
 
     KEGG_up <- as.data.frame(kk_up)
 
@@ -206,34 +280,35 @@ TZ_DEG <- function(countdata = countdata, group = group,
     genelist_down <- filter(DEGresults, regulation == "Down_reg")$logFC
     names(genelist_down) <- filter(DEGresults, regulation == "Down_reg")$SYMBOL
 
-    GeneList_down <- bitr(names(genelist_down), fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Hs.eg.db")
+    GeneList_down <- bitr(names(genelist_down), fromType="SYMBOL", toType="ENTREZID", OrgDb= OrgDb)
     head(GeneList_down)
 
     gene_down <- GeneList_down$ENTREZID
 
     ego_all_down <- enrichGO(gene = gene_down,
-                             OrgDb = "org.Hs.eg.db",
+                             OrgDb = OrgDb,
                              ont = "ALL",
                              pAdjustMethod = "BH",
-                             pvalueCutoff = 0.05,
-                             qvalueCutoff = 0.5,
+                             pvalueCutoff = egocut,
+                             qvalueCutoff = 1,
                              readable = TRUE)
 
     ego_bar_down <- barplot(ego_all_down,showCategory=20, split= "ONTOLOGY")+
-      facet_grid(ONTOLOGY~.,scale="free")
-    # scale_x_discrete(labels=function(x) str_wrap(x, width=50))+
+      facet_grid(ONTOLOGY~.,scale="free")+
+      scale_y_discrete(labels=function(x) str_wrap(x, width=60))
     # theme_bw()
 
-    ggsave("results/ego_bar_down.pdf", ego_bar_down, height = 10, width = 10)
+    ggsave("results/ego_bar_down.pdf", ego_bar_down, height = 15, width = 10)
     GO_all_down <- as.data.frame(ego_all_down)
 
     write.csv(GO_all_down, file = "results/GO_all_down.csv")
 
 
     kk_down <- enrichKEGG(gene = gene_down,
-                          organism = 'hsa',
-                          pvalueCutoff = 0.05)
-    kk_down <- setReadable(kk_down, keyType = "ENTREZID", OrgDb = "org.Hs.eg.db")
+                          organism = organism,
+                          pvalueCutoff = kkcut,
+                          qvalueCutoff = 1)
+    kk_down <- setReadable(kk_down, keyType = "ENTREZID", OrgDb = OrgDb)
 
     KEGG_down <- as.data.frame(kk_down)
 
