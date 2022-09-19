@@ -1,15 +1,18 @@
-qPCR <- function(data = data, Samples = Samples, facet = TRUE, filename = filename){
+
+
+
+qPCR <- function(data = data, ctrl = ctrl, samples = samples, facet = TRUE, filename = filename){
 
   suppressMessages(library(tidyverse), library(ggpubr))
   data_a <- data %>%
     full_join({group_by(.,Sample.Name) %>%
         summarise_at("Ctrl.CT", ~ mean(.x, na.rm = T))}, by = "Sample.Name", suffix=c("",".mean")) %>%
-    mutate(d_CT = CT - Ctrl.CT.mean) %>%
-    full_join({filter(.,Sample.Name == Ctrl) %>% group_by(Target.Name) %>%
-        summarise_at("d_CT", ~ mean(.x, na.rm = T))}, by = "Target.Name", suffix=c("",".mean")) %>%
-    mutate(dd_CT = d_CT - d_CT.mean) %>%
-    mutate(`2^-dd_CT` = 2^-(dd_CT)) %>%
-    mutate(Sample.Name = ordered(Sample.Name, levels = Samples))
+    mutate(d_Ct = Ct - Ctrl.Ct.mean) %>%
+    full_join({filter(.,Sample.Name == ctrl) %>% group_by(Target.Name) %>%
+        summarise_at("d_Ct", ~ mean(.x, na.rm = T))}, by = "Target.Name", suffix=c("",".mean")) %>%
+    mutate(dd_Ct = d_Ct - d_Ct.mean) %>%
+    mutate(`2^-dd_Ct` = 2^-(dd_Ct)) %>%
+    mutate(Sample.Name = ordered(Sample.Name, levels = samples))
 
 
 
