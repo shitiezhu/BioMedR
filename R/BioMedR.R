@@ -86,10 +86,7 @@ Col2Grey <- function(col){
   rgb(g, g, g, maxColorValue=255)
 }
 
-library(tidyverse)
-library(survival)
-library(survminer)
-library(patchwork)
+
 
 fpkmToTpm <- function(fpkm)
 {
