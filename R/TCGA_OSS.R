@@ -1,9 +1,6 @@
 OSS <- function(data = data, gene = gene, cut.point = "0.5", out.format = "r"){
 
-  library(tidyverse)
-  library(survival)
-  library(survminer)
-  library(patchwork)
+
   data = data
   gene = gene
 

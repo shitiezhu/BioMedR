@@ -1,6 +1,5 @@
 Find_doublet <- function(data){
-  requir(DoubletFinder)
-  requir(Seurat)
+
   data = JoinLayers(data)
   sweep.res.list <- paramSweep(data, PCs = 1:20, sct = FALSE)
   sweep.stats <- summarizeSweep(sweep.res.list, GT = FALSE)
