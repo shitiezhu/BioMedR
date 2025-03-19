@@ -129,12 +129,11 @@ require(colorspace)
 tz_palette <- function(n) {
   # 在HCL颜色空间中系统化采样
   hues <- seq(0, 360, length.out = n+1)[1:n]  # 全色相均匀分布
-  chroma <- rep(c(75, 85, 85), length.out = n) # 交替饱和度层级
-  luminance <- rep(c(60, 70, 70), length.out = n) # 交替亮度层级
+  chroma <- rep(c( 90,50, 70), length.out = n) # 交替饱和度层级
+  luminance <- rep(c(70, 80, 50), length.out = n) # 交替亮度层级
 
-  require(colorspace)
   # 生成HCL颜色
-  colors <- colorspace::hcl(
+  colors <- hcl(
     h = hues,
     c = chroma,
     l = luminance
