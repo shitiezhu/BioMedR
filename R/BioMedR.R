@@ -100,6 +100,7 @@ corrplot <- function(data, x, y, path, out.format){
   path = path
   if(!dir.exists(path)) {dir.create(path)}
 
+  require(tidyverse)
   p = data %>%
     as.data.frame() %>%
     ggplot(aes_string(x, y)) +
@@ -119,4 +120,28 @@ corrplot <- function(data, x, y, path, out.format){
 }
 
 
+require(colorspace)
+
+
+
+# 生成高区分度配色方案
+tz_palette <- function(n) {
+  # 在HCL颜色空间中系统化采样
+  hues <- seq(0, 360, length.out = n+1)[1:n]  # 全色相均匀分布
+  chroma <- rep(c(75, 85, 85), length.out = n) # 交替饱和度层级
+  luminance <- rep(c(60, 70, 70), length.out = n) # 交替亮度层级
+
+  require(colorspace)
+  # 生成HCL颜色
+  colors <- colorspace::hcl(
+    h = hues,
+    c = chroma,
+    l = luminance
+  )
+
+  # 人工优化确保相邻颜色差异最大化
+  set.seed(1111)
+  optimized_order <- sample(n, n, replace = F)
+  colors[optimized_order]
+}
 
