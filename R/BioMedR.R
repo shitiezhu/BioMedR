@@ -133,7 +133,7 @@ tz_palette <- function(n) {
   luminance <- rep(c(70, 80, 50), length.out = n) # 交替亮度层级
 
   # 生成HCL颜色
-  colors <- hcl(
+  colors <- grDevices::hcl(
     h = hues,
     c = chroma,
     l = luminance
@@ -144,4 +144,14 @@ tz_palette <- function(n) {
   optimized_order <- sample(n, n, replace = F)
   colors[optimized_order]
 }
+
+
+
+
+
+
+
+
+
+
 
